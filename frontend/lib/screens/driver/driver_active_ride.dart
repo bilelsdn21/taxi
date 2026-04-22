@@ -56,10 +56,8 @@ class _DriverActiveRideState extends State<DriverActiveRide>
   double? _routeDistanceKm;
   int? _routeDurationMin;
 
-  // ── Roaming (no ride) ─────────────────────────────────────────────────
-  // Quand il n'y a pas de course, le taxi "tourne" autour de sa position originale
-  int _roamStep = 0;
-  final List<LatLng> _roamPath = [];
+  // ── Follow mode (camera locks on driver position) ────────────────────
+  bool _followMode = true;
 
   // ── Animation pulse ───────────────────────────────────────────────────
   late AnimationController _pulseController;
@@ -102,20 +100,30 @@ class _DriverActiveRideState extends State<DriverActiveRide>
   void _initWebSocket() {
     if (_driverId == null) return;
     try {
+      _locationChannel?.sink.close();
       final String wsUrl = kIsWeb
           ? 'ws://localhost:8000/ws/location/$_driverId'
           : (defaultTargetPlatform == TargetPlatform.android
               ? 'ws://10.0.2.2:8000/ws/location/$_driverId'
               : 'ws://localhost:8000/ws/location/$_driverId');
-              
+
       _locationChannel = WebSocketChannel.connect(Uri.parse(wsUrl));
-      
-      // Listen for acks from server if needed
-      _locationChannel?.stream.listen((message) {
-        debugPrint('WebSocket Server: $message');
-      });
+
+      _locationChannel?.stream.listen(
+        (message) => debugPrint('WS ack: $message'),
+        onError: (e) {
+          debugPrint('WS error: $e');
+          Future.delayed(const Duration(seconds: 3), _initWebSocket);
+        },
+        onDone: () {
+          debugPrint('WS closed — reconnecting in 3s');
+          Future.delayed(const Duration(seconds: 3), _initWebSocket);
+        },
+        cancelOnError: false,
+      );
     } catch (e) {
-      debugPrint('WebSocket Connection Error: $e');
+      debugPrint('WS connect error: $e');
+      Future.delayed(const Duration(seconds: 3), _initWebSocket);
     }
   }
 
@@ -250,14 +258,12 @@ class _DriverActiveRideState extends State<DriverActiveRide>
 
   /// Appelé chaque fois que la position change
   Future<void> _onPositionUpdated() async {
-    if (_currentPosition != null) {
-      if (_mapReady) {
-        try {
-          _mapController.move(_currentPosition!, _mapController.camera.zoom);
-        } catch (_) {}
-      }
+    if (_currentPosition != null && _mapReady && _followMode) {
+      try {
+        _mapController.move(_currentPosition!, _mapController.camera.zoom);
+      } catch (_) {}
     }
-    
+
     if (_activeRide != null) {
       final now = DateTime.now();
       if (_lastRouteFetchAt != null &&
@@ -266,7 +272,7 @@ class _DriverActiveRideState extends State<DriverActiveRide>
       }
       _lastRouteFetchAt = now;
       await _fetchRoute();
-      _focusMapOnRide();
+      if (_followMode) _focusMapOnRide();
     }
   }
 
@@ -375,25 +381,9 @@ class _DriverActiveRideState extends State<DriverActiveRide>
     debugPrint("Mode roaming activé : utilisant le GPS en temps réel.");
   }
 
-  /// Génère un chemin en boucle autour de la position originale (~300m de rayon)
-  void _buildRoamPath() {
-    if (_originalPosition == null) return;
-    _roamPath.clear();
-    const int steps = 12;
-    const double radius = 0.003; // ~300m en degrés lat/lng
-    for (int i = 0; i <= steps; i++) {
-      final angle = (2 * math.pi * i) / steps;
-      _roamPath.add(LatLng(
-        _originalPosition!.latitude + radius * math.cos(angle),
-        _originalPosition!.longitude + radius * math.sin(angle),
-      ));
-    }
-  }
-
   void _stopRoaming() {
     _roamTimer?.cancel();
     _roamTimer = null;
-    _roamStep = 0;
   }
 
   // ──────────────────────────────────────────────────────────────────────
@@ -422,7 +412,7 @@ class _DriverActiveRideState extends State<DriverActiveRide>
     );
 
     try {
-      final response = await http.get(url);
+      final response = await http.get(url).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final routes = data['routes'] as List?;
@@ -744,7 +734,7 @@ class _DriverActiveRideState extends State<DriverActiveRide>
                   ),
                   const SizedBox(height: 20),
                   const Text(
-                    'Votre taxi est en patrouille 🚕',
+                    'En attente d\'une course 🚕',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -753,7 +743,7 @@ class _DriverActiveRideState extends State<DriverActiveRide>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Le taxi tourne autour de votre position de départ en attendant une nouvelle course.',
+                    'Votre position GPS est mise à jour en temps réel. Acceptez une course depuis le Dashboard ou l\'onglet Requests.',
                     style:
                         TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
                   ),
@@ -875,6 +865,11 @@ class _DriverActiveRideState extends State<DriverActiveRide>
           _mapReady = true;
           if (_currentPosition != null) {
             _mapController.move(_currentPosition!, 15.0);
+          }
+        },
+        onPositionChanged: (_, hasGesture) {
+          if (hasGesture && _followMode) {
+            setState(() => _followMode = false);
           }
         },
       ),
@@ -1060,20 +1055,28 @@ class _DriverActiveRideState extends State<DriverActiveRide>
         children: [
           map,
           // Center on me button
+          // ── Follow mode button (lock camera on GPS) ──
           Positioned(
             bottom: 16,
             right: 16,
             child: FloatingActionButton.small(
-              backgroundColor: const Color(0xFF1A1A1A),
-              foregroundColor: const Color(0xFFFFCC00),
+              heroTag: 'follow_btn',
+              backgroundColor: _followMode
+                  ? const Color(0xFFFFCC00)
+                  : const Color(0xFF1A1A1A),
+              foregroundColor: _followMode ? Colors.black : Colors.white,
               onPressed: () {
-                if (_currentPosition != null) {
-                  _mapController.move(_currentPosition!, 16.0);
+                setState(() => _followMode = !_followMode);
+                if (_followMode && _currentPosition != null) {
+                  _mapController.move(_currentPosition!, 15.5);
                 }
               },
-              child: const Icon(Icons.my_location),
+              child: Icon(
+                _followMode ? Icons.navigation : Icons.navigation_outlined,
+              ),
             ),
           ),
+          // ── Simulation toggle ──
           Positioned(
             bottom: 16,
             right: 70,
@@ -1225,68 +1228,6 @@ class _DriverActiveRideState extends State<DriverActiveRide>
                       ),
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBoltStep({
-    required IconData icon,
-    required Color color,
-    required String label,
-    required String address,
-    bool isCompleted = false,
-  }) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: isCompleted ? Colors.white24 : color),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 9, fontWeight: FontWeight.bold),
-              ),
-              Text(
-                address,
-                style: TextStyle(
-                  color: isCompleted ? Colors.white38 : Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  decoration: isCompleted ? TextDecoration.lineThrough : null,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _infoChip({required IconData icon, required String label}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: const Color(0xFFFFCC00)),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
           ),
         ],
       ),

@@ -2,6 +2,8 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+from app.services.auth_service import get_password_hash
+
 from datetime import datetime, timedelta
 from app.database.connection import SessionLocal, engine
 from app.models.user import User, UserRoleEnum
@@ -42,7 +44,7 @@ def seed_database():
             full_name='Ahmed Chauffeur',
             email='ahmed.driver@example.com',
             phone='+33612345678',
-            password_hash='hashed_password_123',
+            password_hash=get_password_hash('driver123'),
             role=UserRoleEnum.driver,
             is_active=True,
             created_at=datetime.utcnow(),
@@ -53,7 +55,7 @@ def seed_database():
             full_name='Marie Passager',
             email='marie.commuter@example.com',
             phone='+33698765432',
-            password_hash='hashed_password_123',
+            password_hash=get_password_hash('user123'),
             role=UserRoleEnum.commuter,
             is_active=True,
             created_at=datetime.utcnow(),
