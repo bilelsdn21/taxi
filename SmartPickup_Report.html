@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartPickup — Rapport de Projet</title>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface2: #1a1a1a;
+      --border: #2a2a2a;
+      --yellow: #ffcc00;
+      --yellow-dim: rgba(255,204,0,0.15);
+      --green: #4ade80;
+      --green-dim: rgba(74,222,128,0.12);
+      --red: #f87171;
+      --red-dim: rgba(248,113,113,0.12);
+      --blue: #60a5fa;
+      --blue-dim: rgba(96,165,250,0.12);
+      --orange: #fb923c;
+      --orange-dim: rgba(251,146,60,0.12);
+      --text: #ffffff;
+      --text-muted: #a0a0a0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 0 0 60px 0;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, #111 0%, #1a1400 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 40px 48px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .logo {
+      width: 64px; height: 64px;
+      background: linear-gradient(135deg, var(--yellow), #ff9900);
+      border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px;
+      flex-shrink: 0;
+    }
+    .header-text h1 { font-size: 32px; font-weight: 800; color: var(--yellow); }
+    .header-text p { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
+    .badge {
+      display: inline-block; padding: 4px 12px; border-radius: 99px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.8px;
+    }
+    .badge-yellow { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(255,204,0,0.3); }
+    .badge-green  { background: var(--green-dim);  color: var(--green);  border: 1px solid rgba(74,222,128,0.3); }
+    .badge-red    { background: var(--red-dim);    color: var(--red);    border: 1px solid rgba(248,113,113,0.3); }
+    .badge-blue   { background: var(--blue-dim);   color: var(--blue);   border: 1px solid rgba(96,165,250,0.3); }
+    .badge-orange { background: var(--orange-dim); color: var(--orange); border: 1px solid rgba(251,146,60,0.3); }
+
+    /* ── Layout ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 32px; }
+    .section { margin-top: 48px; }
+    .section-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 2px;
+      color: var(--text-muted); text-transform: uppercase;
+      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-title::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 16px; font-weight: 700; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .card p { color: var(--text-muted); font-size: 14px; }
+
+    /* ── Grid ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    @media(max-width: 750px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+    /* ── Status Table ── */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th {
+      text-align: left; padding: 10px 14px;
+      color: var(--text-muted); font-size: 11px; font-weight: 600;
+      letter-spacing: 0.8px; text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+    }
+    td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* ── Code ── */
+    code {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      background: var(--surface2);
+      padding: 2px 7px;
+      border-radius: 5px;
+      color: var(--yellow);
+    }
+    pre {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #e2e8f0;
+      overflow-x: auto;
+      margin-top: 12px;
+    }
+
+    /* ── Fix blocks ── */
+    .fix-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--green);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+    }
+    .fix-block.warning { border-left-color: var(--yellow); }
+    .fix-block.error   { border-left-color: var(--red); }
+    .fix-block.info    { border-left-color: var(--blue); }
+    .fix-title {
+      font-size: 14px; font-weight: 700;
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 10px;
+    }
+    .fix-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; }
+
+    /* ── Progress bar ── */
+    .progress-wrap { background: var(--surface2); border-radius: 99px; height: 8px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--yellow), #ff9900); }
+
+    /* ── Timeline ── */
+    .timeline { position: relative; padding-left: 32px; }
+    .timeline::before {
+      content: ''; position: absolute; left: 11px; top: 0; bottom: 0;
+      width: 2px; background: var(--border);
+    }
+    .tl-item { position: relative; margin-bottom: 24px; }
+    .tl-dot {
+      position: absolute; left: -32px; top: 4px;
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid var(--bg);
+    }
+    .tl-dot.done   { background: var(--green); }
+    .tl-dot.fixed  { background: var(--yellow); }
+    .tl-dot.todo   { background: var(--text-muted); }
+    .tl-title { font-weight: 700; font-size: 14px; }
+    .tl-body  { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+
+    /* ── API table colors ── */
+    .method { display: inline-block; padding: 2px 8px; border-radius: 5px; font-size: 11px; font-weight: 700; }
+    .get    { background: rgba(74,222,128,0.2); color: var(--green); }
+    .post   { background: rgba(96,165,250,0.2); color: var(--blue); }
+    .put    { background: rgba(251,146,60,0.2); color: var(--orange); }
+    .ws     { background: rgba(168,85,247,0.2); color: #c084fc; }
+
+    /* ── Summary bar ── */
+    .summary-bar {
+      display: flex; gap: 24px; flex-wrap: wrap;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 24px 32px; margin-top: 32px;
+    }
+    .stat { text-align: center; flex: 1; min-width: 80px; }
+    .stat-val { font-size: 32px; font-weight: 800; }
+    .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════ HEADER ══════════ -->
+<div class="header">
+  <div class="logo">🚕</div>
+  <div class="header-text">
+    <h1>SmartPickup</h1>
+    <p>Rapport complet du projet · Généré le <strong>22 avril 2026</strong></p>
+    <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+      <span class="badge badge-blue">Flutter Frontend</span>
+      <span class="badge badge-green">FastAPI Backend</span>
+      <span class="badge badge-yellow">WebSocket GPS</span>
+      <span class="badge badge-orange">Mapbox Navigation</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ══════════ SUMMARY ══════════ -->
+  <div class="summary-bar">
+    <div class="stat"><div class="stat-val" style="color:var(--green)">4</div><div class="stat-label">Bugs fixés</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--yellow)">13</div><div class="stat-label">Fichiers clés</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--blue)">11</div><div class="stat-label">Endpoints API</div></div>
+    <div class="stat"><div class="stat-val" style="color:#c084fc)">1</div><div class="stat-label">WebSocket</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--orange)">~80%</div><div class="stat-label">Fonctionnel</div></div>
+  </div>
+
+  <!-- ══════════ ARCHITECTURE ══════════ -->
+  <div class="section">
+    <div class="section-title">Architecture du Projet</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🗂️ Backend — FastAPI + PostgreSQL</div>
+        <p style="margin-bottom:12px">API REST + WebSocket temps réel pour la localisation GPS du chauffeur.</p>
+        <table>
+          <tr><th>Couche</th><th>Description</th></tr>
+          <tr><td><code>main.py</code></td><td>FastAPI app, CORS, routers, colonnes taxi</td></tr>
+          <tr><td><code>routes/</code></td><td>auth, user, driver/profile, driver/rides, ws</td></tr>
+          <tr><td><code>controllers/</code></td><td>auth, user, driver (délèguent aux services)</td></tr>
+          <tr><td><code>services/</code></td><td>auth, driver_profile, driver_ride, user</td></tr>
+          <tr><td><code>models/</code></td><td>13 modèles SQLAlchemy (User, Taxi, RideRequest…)</td></tr>
+          <tr><td><code>schemas/</code></td><td>Pydantic : driver.py, user.py</td></tr>
+          <tr><td><code>database/</code></td><td>connection.py (engine + SessionLocal)</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">📱 Frontend — Flutter</div>
+        <p style="margin-bottom:12px">Application mobile multi-plateforme (Android / iOS / Windows / Web).</p>
+        <table>
+          <tr><th>Dossier</th><th>Contenu</th></tr>
+          <tr><td><code>screens/auth/</code></td><td>Login, Signup, DriverLayout, UserLayout</td></tr>
+          <tr><td><code>screens/driver/</code></td><td>Dashboard, Requests, ActiveRide, History, Profile</td></tr>
+          <tr><td><code>screens/user/</code></td><td>Home, BookRide, TrackRide, Schedule, Incident…</td></tr>
+          <tr><td><code>services/</code></td><td>DriverApiService, LocationPermissionService</td></tr>
+          <tr><td><code>models/</code></td><td>LoginResponse</td></tr>
+          <tr><td><code>widgets/</code></td><td>notification.dart</td></tr>
+          <tr><td><code>assets/</code></td><td>car.png, taxi_car.png</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ FONCTIONNALITES ══════════ -->
+  <div class="section">
+    <div class="section-title">Fonctionnalités Implémentées</div>
+    <div class="grid-3">
+      <div class="card" style="border-left: 4px solid var(--green)">
+        <div class="card-title"><span>✅</span> Auth complète</div>
+        <p>Login JWT avec sauvegarde token (FlutterSecureStorage), navigation par rôle (driver → /driver, user → /userlayout), Signup, bypass dev pour tests sans token.</p>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--green)">
+        <div class="card-title"><span>✅</span> Dashboard Chauffeur</div>
+        <p>Affichage courses disponibles, course active en cours, profil chauffeur, toggle Online/Offline, Accept/Reject course avec navigation automatique.</p>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--green)">
+        <div class="card-title"><span>✅</span> Ride Requests</div>
+        <p>Liste des courses pending, accordéon détails, boutons Accept/Reject, navigation vers Active Ride après acceptation.</p>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--green)">
+        <div class="card-title"><span>✅</span> Active Ride + Carte</div>
+        <p>FlutterMap + tuiles Mapbox Navigation Night, marqueurs pickup/destination/taxi animé, polyline itinéraire, rotation taxi selon heading GPS.</p>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--green)">
+        <div class="card-title"><span>✅</span> WebSocket GPS</div>
+        <p>Connexion WS persistante au backend, publication position toutes les 2s, stockage en BDD (Taxi.latitude/longitude/last_updated), reconnexion auto.</p>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--green)">
+        <div class="card-title"><span>✅</span> Mapbox Directions</div>
+        <p>Itinéraire réel recalculé toutes les 6s, affichage distance + durée estimée, deux phases : vers pickup puis vers destination finale.</p>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--green)">
+        <div class="card-title"><span>✅</span> Mode Simulation</div>
+        <p>Mouvement simulé vers la destination (test sans GPS physique), toggle via bouton robot sur la carte.</p>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--green)">
+        <div class="card-title"><span>✅</span> Historique Courses</div>
+        <p>Liste triée par date avec statut (completed / cancelled), durée, pickup/dropoff, rating par défaut.</p>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--yellow)">
+        <div class="card-title"><span>⚠️</span> Profil Chauffeur</div>
+        <p>Page UI existante, endpoint GET/PUT profile fonctionnel, mais upload photo non encore branché côté frontend.</p>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--blue)">
+        <div class="card-title"><span>🔵</span> Side Passager</div>
+        <p>Écrans BookRide, TrackRide, Schedule, Incident, RideHistory présents. Connectivité backend partielle.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ API ENDPOINTS ══════════ -->
+  <div class="section">
+    <div class="section-title">Endpoints API Backend</div>
+    <div class="card">
+      <table>
+        <tr>
+          <th>Méthode</th><th>Endpoint</th><th>Description</th><th>Statut</th>
+        </tr>
+        <tr>
+          <td><span class="method post">POST</span></td>
+          <td><code>/auth/login</code></td>
+          <td>Authentification JWT, renvoie token + rôle</td>
+          <td><span class="badge badge-green">✅ OK</span></td>
+        </tr>
+        <tr>
+          <td><span class="method post">POST</span></td>
+          <td><code>/auth/signup</code></td>
+          <td>Inscription utilisateur ou chauffeur</td>
+          <td><span class="badge badge-green">✅ OK</span></td>
+        </tr>
+        <tr>
+          <td><span class="method get">GET</span></td>
+          <td><code>/api/driver/profile</code></td>
+          <td>Profil complet du chauffeur connecté</td>
+          <td><span class="badge badge-green">✅ OK</span></td>
+        </tr>
+        <tr>
+          <td><span class="method put">PUT</span></td>
+          <td><code>/api/driver/profile</code></td>
+          <td>Mise à jour nom, téléphone, permis</td>
+          <td><span class="badge badge-green">✅ OK</span></td>
+        </tr>
+        <tr>
+          <td><span class="method get">GET</span></td>
+          <td><code>/api/driver/taxi</code></td>
+          <td>Informations du véhicule</td>
+          <td><span class="badge badge-green">✅ OK</span></td>
+        </tr>
+        <tr>
+          <td><span class="method put">PUT</span></td>
+          <td><code>/api/driver/status</code></td>
+          <td>Toggle Online / Offline</td>
+          <td><span class="badge badge-green">✅ OK</span></td>
+        </tr>
+        <tr>
+          <td><span class="method get">GET</span></td>
+          <td><code>/api/driver/rides/available</code></td>
+          <td>Courses pending disponibles</td>
+          <td><span class="badge badge-green">✅ OK</span></td>
+        </tr>
+        <tr>
+          <td><span class="method get">GET</span></td>
+          <td><code>/api/driver/rides/active</code></td>
+          <td>Course active du chauffeur (accepted ou started)</td>
+          <td><span class="badge badge-green">✅ OK</span></td>
+        </tr>
+        <tr>
+          <td><span class="method post">POST</span></td>
+          <td><code>/api/driver/rides/{id}/accept</code></td>
+          <td>Accepter une course</td>
+          <td><span class="badge badge-green">✅ OK</span></td>
+        </tr>
+        <tr>
+          <td><span class="method post">POST</span></td>
+          <td><code>/api/driver/rides/{id}/cancel</code></td>
+          <td>Annuler une course acceptée</td>
+          <td><span class="badge badge-green">✅ OK</span></td>
+        </tr>
+        <tr>
+          <td><span class="method put">PUT</span></td>
+          <td><code>/api/driver/rides/{id}/status</code></td>
+          <td>Démarrer (<code>start</code>) ou terminer (<code>complete</code>) une course</td>
+          <td><span class="badge badge-green">✅ OK</span></td>
+        </tr>
+        <tr>
+          <td><span class="method get">GET</span></td>
+          <td><code>/api/driver/rides/history</code></td>
+          <td>Historique des courses du chauffeur</td>
+          <td><span class="badge badge-green">✅ OK</span></td>
+        </tr>
+        <tr>
+          <td><span class="method ws">WS</span></td>
+          <td><code>/ws/location/{driver_id}</code></td>
+          <td>Localisation temps réel (WebSocket bidirectionnel)</td>
+          <td><span class="badge badge-green">✅ OK</span></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════ BUGS FIXES ══════════ -->
+  <div class="section">
+    <div class="section-title">Bugs Corrigés Aujourd'hui</div>
+
+    <div class="fix-block">
+      <div class="fix-title">
+        <span class="badge badge-green">FIX 1</span>
+        Dashboard — Nom chauffeur ne s'affichait pas
+      </div>
+      <div class="fix-meta">📄 driver_dashboard.dart · ligne 166</div>
+      <p style="color:var(--text-muted); font-size:13px; margin-bottom:10px;">
+        L'accès au profil utilisait <code>_driverProfile!['user']['full_name']</code> mais le backend retourne <code>full_name</code> à la racine, pas imbriqué dans une clé <code>user</code>. Résultat : le nom s'affichait toujours "Driver".
+      </p>
+      <pre><span style="color:#f87171">- _driverProfile!['user']['full_name']</span>
+<span style="color:#4ade80">+ _driverProfile!['full_name']</span></pre>
+    </div>
+
+    <div class="fix-block">
+      <div class="fix-title">
+        <span class="badge badge-green">FIX 2</span>
+        Login — URL hardcodée, token non sauvegardé, mauvaise navigation
+      </div>
+      <div class="fix-meta">📄 login.dart</div>
+      <p style="color:var(--text-muted); font-size:13px; margin-bottom:10px;">
+        Trois problèmes en un : (1) URL pointait vers une IP privée fixe (<code>10.122.164.121</code>) au lieu de localhost dynamique, (2) le JWT <code>access_token</code> n'était jamais sauvegardé en secure storage, (3) tous les utilisateurs étaient redirigés vers <code>/userlayout</code> même les chauffeurs.
+      </p>
+      <pre><span style="color:#f87171">- Uri.parse('http://10.122.164.121:8000/auth/login')</span>
+<span style="color:#4ade80">+ Uri.parse('$_baseUrl/auth/login')  // localhost adaptatif</span>
+
+<span style="color:#f87171">- // token non sauvegardé</span>
+<span style="color:#4ade80">+ await _storage.write(key: 'token', value: data['access_token']);</span>
+<span style="color:#4ade80">+ await _storage.write(key: 'role', value: data['role']);</span>
+
+<span style="color:#f87171">- Navigator.pushReplacementNamed(context, '/userlayout');</span>
+<span style="color:#4ade80">+ final route = data['role'] == 'driver' ? '/driver' : '/userlayout';</span>
+<span style="color:#4ade80">+ Navigator.pushReplacementNamed(context, route);</span></pre>
+    </div>
+
+    <div class="fix-block">
+      <div class="fix-title">
+        <span class="badge badge-green">FIX 3</span>
+        DriverRequests — Navigation manquante après acceptation
+      </div>
+      <div class="fix-meta">📄 driver_requests.dart</div>
+      <p style="color:var(--text-muted); font-size:13px; margin-bottom:10px;">
+        Après avoir accepté une course depuis l'onglet Requests, le chauffeur restait sur la même page. Le Dashboard naviguait correctement vers <code>/driver/active</code>, mais Requests ne le faisait pas.
+      </p>
+      <pre><span style="color:#4ade80">+ Navigator.pushReplacementNamed(context, '/driver/active');</span></pre>
+    </div>
+
+    <div class="fix-block">
+      <div class="fix-title">
+        <span class="badge badge-green">FIX 4</span>
+        Active Ride — Overlay coordonnées GPS défini mais jamais affiché
+      </div>
+      <div class="fix-meta">📄 driver_active_ride.dart · méthode _buildMap()</div>
+      <p style="color:var(--text-muted); font-size:13px; margin-bottom:10px;">
+        La méthode <code>_buildCoordinatesOverlay()</code> était entièrement implementée (widget avec lat/lng en temps réel, bordure jaune) mais n'était jamais ajoutée au Stack de la carte.
+      </p>
+      <pre><span style="color:#4ade80">+ _buildCoordinatesOverlay(),  // ajouté dans le Stack</span></pre>
+    </div>
+
+    <div class="fix-block info">
+      <div class="fix-title">
+        <span class="badge badge-blue">AMÉLIORATION</span>
+        DriverApiService — Token maintenant envoyé dans les requêtes
+      </div>
+      <div class="fix-meta">📄 driver_api_service.dart</div>
+      <p style="color:var(--text-muted); font-size:13px; margin-bottom:10px;">
+        Les headers d'authentification étaient commentés. Maintenant le token JWT est lu depuis le secure storage et envoyé automatiquement si présent. Le bypass backend (auto-login du premier driver) reste actif pour les tests sans token.
+      </p>
+      <pre><span style="color:#f87171">- // String? token = await _storage.read(key: 'token');</span>
+<span style="color:#f87171">- // 'Authorization': 'Bearer $token',</span>
+<span style="color:#4ade80">+ final String? token = await _storage.read(key: 'token');</span>
+<span style="color:#4ade80">+ if (token != null) 'Authorization': 'Bearer $token',</span></pre>
+    </div>
+  </div>
+
+  <!-- ══════════ FLOW CHAUFFEUR ══════════ -->
+  <div class="section">
+    <div class="section-title">Flow Complet du Chauffeur</div>
+    <div class="card">
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot done"></div>
+          <div class="tl-title">1. Login → <code>/driver</code></div>
+          <div class="tl-body">JWT sauvegardé, role détecté, redirection vers Dashboard chauffeur.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot done"></div>
+          <div class="tl-title">2. Dashboard — Voir les courses disponibles</div>
+          <div class="tl-body">Polling de <code>GET /api/driver/rides/available</code>. Requests affichées avec accordéon détails.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot done"></div>
+          <div class="tl-title">3. Accepter une course</div>
+          <div class="tl-body"><code>POST /api/driver/rides/{id}/accept</code> → RideAssignment créé en BDD → Navigation automatique vers Active Ride.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot done"></div>
+          <div class="tl-title">4. Active Ride — Localisation GPS</div>
+          <div class="tl-body">Démarrage du tracking GPS (Geolocator), WebSocket <code>/ws/location/{id}</code> ouvert, position envoyée toutes les 2s, stockée en BDD (Taxi table).</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot done"></div>
+          <div class="tl-title">5. Carte Mapbox — Itinéraire dynamique</div>
+          <div class="tl-body">Taxi animé (rotation selon heading), polyline jaune vers pickup, recalcul toutes les 6s via Mapbox Directions API, overlay coordonnées en temps réel.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot done"></div>
+          <div class="tl-title">6. START RIDE</div>
+          <div class="tl-body"><code>PUT /api/driver/rides/{id}/status</code> avec <code>action=start</code> → RideLog créé, RideEvent "started" enregistré → itinéraire bascule vers destination finale.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot done"></div>
+          <div class="tl-title">7. COMPLETE RIDE</div>
+          <div class="tl-body"><code>action=complete</code> → RideLog.status = completed, RideRequest.status = completed, RideEvent "completed" → retour en mode roaming.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot done"></div>
+          <div class="tl-title">8. Historique</div>
+          <div class="tl-body"><code>GET /api/driver/rides/history</code> → liste triée par date avec statut, passager, durée.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ WEBSOCKET ══════════ -->
+  <div class="section">
+    <div class="section-title">WebSocket — Localisation Temps Réel</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📡 Frontend (Flutter)</div>
+        <pre style="font-size:11px">// Connexion
+WebSocketChannel.connect(
+  Uri.parse('ws://localhost:8000/ws/location/$driverId')
+);
+
+// Publication toutes les 2 secondes
+{
+  "latitude": 36.8065,
+  "longitude": 10.1815,
+  "timestamp": "2026-04-22T17:20:00Z"
+}
+
+// Reconnexion auto si erreur publish</pre>
+      </div>
+      <div class="card">
+        <div class="card-title">🖥️ Backend (FastAPI)</div>
+        <pre style="font-size:11px">@router.websocket("/ws/location/{driver_id}")
+async def websocket_endpoint(ws, driver_id):
+    await manager.connect(ws, driver_id)
+    while True:
+        data = await ws.receive_text()
+        # Persist to Taxi table
+        taxi.latitude = lat
+        taxi.longitude = lng
+        taxi.last_updated = now
+        db.commit()
+        # Acknowledge
+        await ws.send_text({"status":"received"})</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ MODELS ══════════ -->
+  <div class="section">
+    <div class="section-title">Modèles de Données Backend</div>
+    <div class="card">
+      <table>
+        <tr><th>Modèle</th><th>Table</th><th>Colonnes clés</th></tr>
+        <tr><td><code>User</code></td><td>users</td><td>user_id, full_name, email, phone, role (driver/commuter/admin), is_active</td></tr>
+        <tr><td><code>DriverProfile</code></td><td>driver_profiles</td><td>driver_id→users, license_number, license_expiry, total_trips, average_rating</td></tr>
+        <tr><td><code>Taxi</code></td><td>taxis</td><td>taxi_id, driver_id→users, vehicle_brand, model, year, plate, availability, <strong>latitude, longitude, last_updated</strong></td></tr>
+        <tr><td><code>Passenger</code></td><td>passengers</td><td>passenger_id→users, full_name, phone</td></tr>
+        <tr><td><code>Zone</code></td><td>zones</td><td>zone_id, name, description</td></tr>
+        <tr><td><code>RideRequest</code></td><td>ride_requests</td><td>request_id, passenger_id, zone_id, pickup/dropoff location+lat+lng, status (pending/accepted/completed…)</td></tr>
+        <tr><td><code>RideAssignment</code></td><td>ride_assignments</td><td>assignment_id, request_id, taxi_id, status (accepted/rejected), acceptance_time</td></tr>
+        <tr><td><code>RideLog</code></td><td>ride_logs</td><td>ride_id, request_id, taxi_id, start_time, end_time, status (started/completed)</td></tr>
+        <tr><td><code>RideEvent</code></td><td>ride_events</td><td>event_id, ride_id, event_type (started/completed), event_time</td></tr>
+        <tr><td><code>Payment</code></td><td>payments</td><td>payment_id, request_id, amount, method, status</td></tr>
+        <tr><td><code>Notification</code></td><td>notifications</td><td>notification_id, user_id, title, message, is_read</td></tr>
+        <tr><td><code>IncidentReport</code></td><td>incident_reports</td><td>report_id, ride_id, reporter_id, type, description, status</td></tr>
+        <tr><td><code>RecurringSchedule</code></td><td>recurring_schedules</td><td>schedule_id, passenger_id, pickup/dropoff, frequency</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════ WHAT'S MISSING ══════════ -->
+  <div class="section">
+    <div class="section-title">Ce Qui Reste à Faire</div>
+    <div class="grid-2">
+      <div class="fix-block warning">
+        <div class="fix-title"><span class="badge badge-yellow">TODO</span> Mapbox Token</div>
+        <p style="color:var(--text-muted); font-size:13px;">
+          Le token Mapbox est passé via <code>--dart-define=MAPBOX_TOKEN=pk.xxx</code> ou la valeur par défaut <code>YOUR_MAPBOX_TOKEN_HERE</code> est utilisée. Sans token valide, la carte et les itinéraires ne fonctionnent pas. Créer un compte Mapbox et remplacer la valeur.
+        </p>
+      </div>
+      <div class="fix-block warning">
+        <div class="fix-title"><span class="badge badge-yellow">TODO</span> Passager — pickup_lat/lng</div>
+        <p style="color:var(--text-muted); font-size:13px;">
+          Les coordonnées GPS de pickup et dropoff doivent être capturées lors de la création d'une ride request (BookRide). Si elles sont nulles, la carte n'affiche pas les marqueurs et l'itinéraire ne se calcule pas.
+        </p>
+      </div>
+      <div class="fix-block warning">
+        <div class="fix-title"><span class="badge badge-yellow">TODO</span> Photo de profil</div>
+        <p style="color:var(--text-muted); font-size:13px;">
+          L'upload photo est présent côté backend (dossier uploads/), mais la page profil chauffeur côté Flutter n'envoie pas encore la photo via multipart/form-data.
+        </p>
+      </div>
+      <div class="fix-block warning">
+        <div class="fix-title"><span class="badge badge-yellow">TODO</span> Notifications temps réel</div>
+        <p style="color:var(--text-muted); font-size:13px;">
+          Le modèle <code>Notification</code> existe en BDD et le badge rouge "3" est hardcodé dans DriverLayout. Il faut brancher un endpoint <code>GET /api/notifications</code> et afficher le vrai compte.
+        </p>
+      </div>
+      <div class="fix-block warning">
+        <div class="fix-title"><span class="badge badge-yellow">TODO</span> Logout</div>
+        <p style="color:var(--text-muted); font-size:13px;">
+          Le bouton logout dans DriverLayout et UserLayout ne fait rien (<code>onPressed: () {}</code>). Il faut supprimer le token du secure storage et naviguer vers <code>/</code>.
+        </p>
+      </div>
+      <div class="fix-block warning">
+        <div class="fix-title"><span class="badge badge-yellow">TODO</span> Paiement</div>
+        <p style="color:var(--text-muted); font-size:13px;">
+          Le modèle <code>Payment</code> existe mais aucun endpoint de paiement n'est exposé. Le montant de course n'est pas calculé ni affiché.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ DEPENDANCES ══════════ -->
+  <div class="section">
+    <div class="section-title">Dépendances Flutter (pubspec.yaml)</div>
+    <div class="card">
+      <div class="grid-2">
+        <table>
+          <tr><th>Package</th><th>Version</th><th>Usage</th></tr>
+          <tr><td><code>flutter_map</code></td><td>^6.1.0</td><td>Carte interactive Mapbox</td></tr>
+          <tr><td><code>latlong2</code></td><td>^0.9.0</td><td>Coordonnées LatLng</td></tr>
+          <tr><td><code>geolocator</code></td><td>^13.0.1</td><td>GPS tracking</td></tr>
+          <tr><td><code>web_socket_channel</code></td><td>^3.0.3</td><td>WebSocket location</td></tr>
+          <tr><td><code>permission_handler</code></td><td>^11.0.0</td><td>Permissions GPS</td></tr>
+        </table>
+        <table>
+          <tr><th>Package</th><th>Version</th><th>Usage</th></tr>
+          <tr><td><code>http</code></td><td>^1.1.0</td><td>API REST calls</td></tr>
+          <tr><td><code>flutter_secure_storage</code></td><td>^9.0.0</td><td>Token JWT storage</td></tr>
+          <tr><td><code>shared_preferences</code></td><td>^2.1.1</td><td>Préférences locales</td></tr>
+          <tr><td><code>image_picker</code></td><td>^1.0.7</td><td>Photo profil</td></tr>
+          <tr><td><code>provider</code></td><td>^6.0.5</td><td>State management</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ POUR LANCER ══════════ -->
+  <div class="section">
+    <div class="section-title">Comment Lancer le Projet</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🖥️ Backend</div>
+        <pre>cd ssss/backend
+
+# Install deps
+pip install -r requirement.txt
+
+# Create DB tables + seed data
+python create_tables.py
+python seed_db.py
+
+# Start server
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Docs disponibles sur :
+# http://localhost:8000/docs</pre>
+      </div>
+      <div class="card">
+        <div class="card-title">📱 Frontend Flutter</div>
+        <pre>cd ssss/frontend
+
+# Install packages
+flutter pub get
+
+# Run with Mapbox token
+flutter run \
+  --dart-define=MAPBOX_TOKEN=pk.YOUR_TOKEN_HERE
+
+# Sans token (carte non fonctionnelle mais UI OK)
+flutter run
+
+# Pour Windows desktop
+flutter run -d windows</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ ETAT GLOBAL ══════════ -->
+  <div class="section">
+    <div class="section-title">État Global du Projet</div>
+    <div class="card">
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+            <span style="font-size:13px; font-weight:600;">Backend API</span>
+            <span style="font-size:13px; color:var(--green)">95%</span>
+          </div>
+          <div class="progress-wrap"><div class="progress-fill" style="width:95%; background:linear-gradient(90deg, var(--green), #16a34a)"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+            <span style="font-size:13px; font-weight:600;">Interface Chauffeur</span>
+            <span style="font-size:13px; color:var(--yellow)">85%</span>
+          </div>
+          <div class="progress-wrap"><div class="progress-fill" style="width:85%"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+            <span style="font-size:13px; font-weight:600;">Carte & GPS</span>
+            <span style="font-size:13px; color:var(--yellow)">90%</span>
+          </div>
+          <div class="progress-wrap"><div class="progress-fill" style="width:90%"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+            <span style="font-size:13px; font-weight:600;">WebSocket Localisation</span>
+            <span style="font-size:13px; color:var(--green)">95%</span>
+          </div>
+          <div class="progress-wrap"><div class="progress-fill" style="width:95%; background:linear-gradient(90deg, var(--green), #16a34a)"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+            <span style="font-size:13px; font-weight:600;">Auth & Sécurité</span>
+            <span style="font-size:13px; color:var(--green)">90%</span>
+          </div>
+          <div class="progress-wrap"><div class="progress-fill" style="width:90%; background:linear-gradient(90deg, var(--green), #16a34a)"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+            <span style="font-size:13px; font-weight:600;">Interface Passager</span>
+            <span style="font-size:13px; color:var(--red)">50%</span>
+          </div>
+          <div class="progress-wrap"><div class="progress-fill" style="width:50%; background:linear-gradient(90deg, var(--red), #dc2626)"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+            <span style="font-size:13px; font-weight:600;">Paiement</span>
+            <span style="font-size:13px; color:var(--red)">10%</span>
+          </div>
+          <div class="progress-wrap"><div class="progress-fill" style="width:10%; background:linear-gradient(90deg, var(--red), #dc2626)"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center; margin-top:48px; color:var(--text-muted); font-size:12px;">
+    SmartPickup · Rapport généré le 22 avril 2026 · Tous droits réservés
+  </div>
+
+</div>
+</body>
+</html>

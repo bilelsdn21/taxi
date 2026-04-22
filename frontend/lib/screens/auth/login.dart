@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' show Platform;
 import 'signup.dart';
 import 'userlayout.dart';
+
 class Login extends StatefulWidget {
   const Login({super.key});
 
@@ -14,7 +18,14 @@ class _LoginState extends State<Login> {
   bool rememberMe = false;
   bool obscurePassword = true;
   bool isLoading = false;
-  
+  final _storage = const FlutterSecureStorage();
+
+  static String get _baseUrl {
+    if (kIsWeb) return 'http://localhost:8000';
+    if (Platform.isAndroid) return 'http://10.0.2.2:8000';
+    return 'http://localhost:8000';
+  }
+
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   
@@ -35,7 +46,7 @@ class _LoginState extends State<Login> {
     
     try {
       final response = await http.post(
-        Uri.parse('http://10.122.164.121:8000/auth/login'),
+        Uri.parse('$_baseUrl/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'email': _emailController.text.trim(),
@@ -43,15 +54,19 @@ class _LoginState extends State<Login> {
           'remember_me': rememberMe,
         }),
       ).timeout(const Duration(seconds: 10));
-      
+
       setState(() {
         isLoading = false;
       });
-      
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        await _storage.write(key: 'token', value: data['access_token']);
+        await _storage.write(key: 'user_id', value: data['user_id'].toString());
+        await _storage.write(key: 'role', value: data['role']);
         if (context.mounted) {
-          Navigator.pushReplacementNamed(context, '/userlayout');
+          final String route = data['role'] == 'driver' ? '/driver' : '/userlayout';
+          Navigator.pushReplacementNamed(context, route);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Bienvenue ${data['full_name']}!'),

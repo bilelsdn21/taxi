@@ -246,6 +246,7 @@ class _DriverRequestsState extends State<DriverRequests> {
                                       backgroundColor: Color(0xFF22C55E),
                                     ),
                                   );
+                                  Navigator.pushReplacementNamed(context, '/driver/active');
                                 }
                               } catch (e) {
                                 if (context.mounted) {

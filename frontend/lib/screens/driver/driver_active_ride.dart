@@ -65,10 +65,7 @@ class _DriverActiveRideState extends State<DriverActiveRide>
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
-  // ── Mapbox access token ───────────────────────────────────────────────
-  // TODO: Pass your real token via --dart-define=MAPBOX_TOKEN=pk.xxx or a local config file
-  static const String _mapboxToken =
-      String.fromEnvironment('MAPBOX_TOKEN', defaultValue: 'YOUR_MAPBOX_TOKEN_HERE');
+  // No API key needed — using free CARTO tiles + OSRM routing
 
   // ─────────────────────────────────────────────────────────────────────
   @override
@@ -400,7 +397,7 @@ class _DriverActiveRideState extends State<DriverActiveRide>
   }
 
   // ──────────────────────────────────────────────────────────────────────
-  //  Mapbox Directions — itinéraire réel
+  //  OSRM Directions — itinéraire réel
   // ──────────────────────────────────────────────────────────────────────
   bool _isFetchingRoute = false;
   DateTime? _lastRouteFetchAt;
@@ -416,11 +413,12 @@ class _DriverActiveRideState extends State<DriverActiveRide>
     }
 
     final origin = _currentPosition!;
+    // OSRM — free routing, no API key, same JSON format as Mapbox Directions
     final url = Uri.parse(
-      'https://api.mapbox.com/directions/v5/mapbox/driving/'
+      'https://router.project-osrm.org/route/v1/driving/'
       '${origin.longitude},${origin.latitude};'
       '${destination.longitude},${destination.latitude}'
-      '?geometries=geojson&overview=full&access_token=$_mapboxToken',
+      '?overview=full&geometries=geojson',
     );
 
     try {
@@ -446,12 +444,12 @@ class _DriverActiveRideState extends State<DriverActiveRide>
                   ? (durationSeconds / 60).round()
                   : null;
             });
-            debugPrint('Route mise à jour : ${points.length} points récupérés.');
+            debugPrint('Route OSRM : ${points.length} points récupérés.');
           }
         }
       }
     } catch (e) {
-      debugPrint('Mapbox Directions error: $e');
+      debugPrint('OSRM routing error: $e');
     } finally {
       _isFetchingRoute = false;
     }
@@ -881,11 +879,13 @@ class _DriverActiveRideState extends State<DriverActiveRide>
         },
       ),
       children: [
-        // ── Tuiles Mapbox Style Navigation Night (Premium look comme Bolt) ──
+        // ── Tuiles CARTO Dark Matter (gratuit, sans clé API) ──
         TileLayer(
           urlTemplate:
-              'https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/256/{z}/{x}/{y}@2x?access_token=$_mapboxToken',
+              'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+          subdomains: const ['a', 'b', 'c', 'd'],
           userAgentPackageName: 'com.example.app',
+          maxZoom: 20,
         ),
 
         // ── Cercle roaming (uniquement sans course active) ──
@@ -903,7 +903,7 @@ class _DriverActiveRideState extends State<DriverActiveRide>
             ],
           ),
 
-        // ── Itinéraire (polyline Mapbox Directions) ──
+        // ── Itinéraire (polyline OSRM Directions) ──
         if (_routePoints.isNotEmpty)
           PolylineLayer(
             polylines: [
@@ -1087,6 +1087,7 @@ class _DriverActiveRideState extends State<DriverActiveRide>
                   Icon(_simulateMode ? Icons.smart_toy : Icons.smart_toy_outlined),
             ),
           ),
+          _buildCoordinatesOverlay(),
           if (_currentPosition == null)
             Container(
               color: Colors.black.withOpacity(0.5),

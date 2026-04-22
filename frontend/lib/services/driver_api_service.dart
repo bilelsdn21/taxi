@@ -16,10 +16,10 @@ class DriverApiService {
   // On suppose que le token est sauvegardé lors du login
   // Si ce n'est pas le cas, pour tester, on peut ne pas l'utiliser ou le simuler
   Future<Map<String, String>> _getHeaders() async {
-    // String? token = await _storage.read(key: 'token');
+    final String? token = await _storage.read(key: 'token');
     return {
       'Content-Type': 'application/json',
-      // 'Authorization': 'Bearer $token', // Décommentez si l'auth est requise
+      if (token != null) 'Authorization': 'Bearer $token',
     };
   }
 

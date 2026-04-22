@@ -163,7 +163,7 @@ class _DriverDashboardState extends State<DriverDashboard> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Welcome back, ${_driverProfile != null && _driverProfile!['user'] != null ? _driverProfile!['user']['full_name'] : 'Driver'}! Manage all your rides here',
+                  'Welcome back, ${_driverProfile != null && _driverProfile!['full_name'] != null ? _driverProfile!['full_name'] : 'Driver'}! Manage all your rides here',
                   style: const TextStyle(color: Color(0xFFA0A0A0)),
                 ),
               ],
